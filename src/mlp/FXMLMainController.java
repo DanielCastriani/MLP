@@ -2,7 +2,9 @@ package mlp;
 
 import java.net.URL;
 import java.util.ResourceBundle;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -93,6 +95,7 @@ public class FXMLMainController implements Initializable {
         tfQtdOculta.setText("2");
     }
 
+   
     private void disableBtns(boolean b) {
         btTeste.setDisable(b);
         btTreino.setDisable(b);
@@ -154,22 +157,27 @@ public class FXMLMainController implements Initializable {
     @FXML
     private void OnAction_Treino(ActionEvent event) {
         if (init_parametros()) {
+            disableBtns(true);
             dnn.train();
             updateTabela();
+            lbStatus.setText(dnn.getAcertos() + "");
+            disableBtns(false);
         }
     }
 
     @FXML
     private void OnAction_Teste(ActionEvent event) {
         dnn.teste();
-        updateTabela();
-
     }
 
     private void updateTabela() {
         try {
-            tvTest.setItems(FXCollections.observableArrayList(dnn.getX_test()));
-            tvTrain.setItems(FXCollections.observableArrayList(dnn.getX_train()));
+            if (dnn.getX_test() != null) {
+                tvTest.setItems(FXCollections.observableArrayList(dnn.getX_test()));
+            }
+            if (dnn.getX_train() != null) {
+                tvTrain.setItems(FXCollections.observableArrayList(dnn.getX_train()));
+            }
         } catch (Exception ex) {
             System.out.println("updateTabela:" + ex);
         }

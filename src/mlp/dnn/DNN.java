@@ -34,6 +34,10 @@ public class DNN {
 
     private double erroGeral;
 
+    private int[][] mc;
+    
+    private int acertos;
+
     public DNN() {
 
     }
@@ -74,7 +78,10 @@ public class DNN {
     public void setQ_hidden_layers(int q_hidden_layers) {
         this.q_hidden_layers = q_hidden_layers;
     }
-    
+
+    public int getAcertos() {
+        return acertos;
+    }
 
     //</editor-fold>    
     //<editor-fold defaultstate="collapsed" desc="INIT">
@@ -208,27 +215,54 @@ public class DNN {
             for (int i = 0; i < x_train.size(); i++) {
                 input.inputInputLayer(x_train.get(i).getX());
                 feedForward(i);
-                classify(i, true);
                 outputError(i);
                 layerError(hidden.get(hidden.size() - 1), output);
                 for (int j = hidden.size() - 2; j >= 0; j--) {
                     layerError(hidden.get(j), hidden.get(j + 1));
                 }
-                
-                output.newW(l_rate,hidden.get(hidden.size() - 1).getError());
-                
-                for (int j = hidden.size() - 2; j >= 0; j--){
+
+                output.newW(l_rate, hidden.get(hidden.size() - 1).getError());
+
+                for (int j = hidden.size() - 2; j >= 0; j--) {
                     Layer a = hidden.get(j);
-                    a.newW(l_rate, hidden.get(j+1).getError());
+                    a.newW(l_rate, hidden.get(j + 1).getError());
                 }
-                
-                input.newW(l_rate,hidden.get(0).getError());
-                
+
+                input.newW(l_rate, hidden.get(0).getError());
+
                 erroMedio += erroGeral;
             }
-            System.out.println("Erro Merio:" + erroMedio/x_train.size());
+            teste();
             it++;
         }
+    }
+
+    public void teste() {
+        mc = new int[x_test.size()][x_test.size()];
+
+        for (int i = 0; i < x_test.size(); i++) {
+            input.inputInputLayer(x_test.get(i).getX());
+            feedForward(i);
+
+            int index = 0;
+            double max = output.getAct_values().get(index);
+
+            for (int j = 1; j < output.getAct_values().size(); j++) {
+                if (output.getAct_values().get(j) > max) {
+                    max = output.getAct_values().get(j);
+                    index = j;
+                }
+            }
+
+            x_test.get(index).setY(classes.get(index));
+            mc[index][classes.indexOf(x_test.get(i).getY_true())] = index;
+        }
+        int acerto = 0;
+
+        for (int i = 0; i < x_test.size(); i++) {
+            acerto += mc[i][i];
+        }
+        acertos = x_test.size() * acerto / 100;
     }
 
     private void feedForward(int i) {
@@ -241,38 +275,20 @@ public class DNN {
         output.feed(hidden.get(hidden.size() - 1));
     }
 
-    private void classify(int x, boolean train) {
-        int index = 0;
-        double max = output.getAct_values().get(index);
-        
-        for (int i = 1; i < output.getAct_values().size(); i++) {
-            if (max < output.getValues().get(i)) {
-                max = output.getValues().get(i);
-                index = i;
-            }
-        }
-        
-        if (train) {
-            x_train.get(x).setY((double)index);
-        } else {
-            x_test.get(x).setY((double)index);
-        }
-    }
-
     private void outputError(int p) {
         erroGeral = 0;
         double erro = 0;
-        
+
         double y_true;
-        int index = classes.indexOf(x_train.get(p).getY_true());        
+        int index = classes.indexOf(x_train.get(p).getY_true());
 
         for (int i = 0; i < output.getAct_values().size(); i++) {
-            if(i == index){
+            if (i == index) {
                 y_true = 1;
-            }else{
+            } else {
                 y_true = 0;
             }
-            
+
             double y = output.getAct_values().get(i);
             erro = (y_true - y) * output.d_f(output.getValues().get(i));
             output.getError().set(i, erro);
@@ -289,14 +305,6 @@ public class DNN {
                 error += b.getError().get(j) * a.getW().get(i).get(j) * a.d_f(a.getValues().get(i));
             }
             a.getError().set(i, error);
-        }
-    }
-
-    public void teste() {
-        for (int i = 0; i < x_test.size(); i++) {
-            input.inputInputLayer(x_test.get(i).getX());
-            feedForward(i);
-            classify(i, false);
         }
     }
 
