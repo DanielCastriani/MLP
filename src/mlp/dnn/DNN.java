@@ -36,6 +36,10 @@ public class DNN {
 
     private int acertos;
 
+    private Reg min, max;
+
+    private boolean treinando;
+    
     public DNN() {
 
     }
@@ -99,28 +103,37 @@ public class DNN {
 
     //</editor-fold>    
     //<editor-fold defaultstate="collapsed" desc="INIT">
-    public void normalize(ArrayList<Reg> x) {
-        Reg r = x.get(0);
+    public void init_min_max() {
+        Reg r = x_train.get(0);
 
-        Reg max = new Reg();
+        max = new Reg();
+        min = new Reg();
+
         max.setX(new ArrayList());
+        min.setX(new ArrayList<>());
 
         for (int i = 0; i < r.getX().size(); i++) {
             max.getX().add(r.getX().get(i));
+            min.getX().add(r.getX().get(i));
         }
 
-        for (Reg l : x) {
+        for (Reg l : x_train) {
             for (int i = 0; i < l.getX().size(); i++) {
                 if ((double) l.getX().get(i) > (double) max.getX().get(i)) {
                     max.getX().set(i, l.getX().get(i));
                 }
+                if ((double) l.getX().get(i) < (double) min.getX().get(i)) {
+                    min.getX().set(i, l.getX().get(i));
+                }
             }
         }
 
+    }
+
+    public void normalize(ArrayList<Reg> x) {
         for (Reg l : x) {
             for (int i = 0; i < l.getX().size(); i++) {
-                double norma = (double) l.getX().get(i) / (double) max.getX().get(i);
-
+                double norma = ((double) l.getX().get(i) - min.getX().get(i)) / ((double) max.getX().get(i) - min.getX().get(i));
                 l.getX().set(i, norma);
             }
         }
@@ -151,13 +164,12 @@ public class DNN {
         if (x_train != null) {
             x_test = load(false);
             if (x_test != null) {
-                Collections.shuffle(x_train);
-                Collections.shuffle(x_test);
                 this.q_hidden_layers = hidden_layers;
+                init_min_max();
                 normalize(x_train);
                 normalize(x_test);
-
                 mc = new int[x_test.size()][x_test.size()];
+                treinando = false;
                 return true;
             }
         }
@@ -222,21 +234,27 @@ public class DNN {
         return null;
     }
     //</editor-fold>
-
+    public boolean treinando() {
+        return treinando;
+    }
     public void train() {
         System.out.println("Treino Iniciou!!!!");
         System.out.println("-------------------------------------------");
 
         int it = 0;
-        double tx = l_rate;
         double erroMedio = Double.MAX_VALUE;
+        treinando = true;
         while (it < this.it && erroMedio > error) {
+
+            Collections.shuffle(x_train);
+            Collections.shuffle(x_test);
+
             erroMedio = 0;
             System.out.println("Epoch:" + (it + 1));
             for (int i = 0; i < x_train.size(); i++) {
                 Layer input = layers.get(0);
                 input.inputInputLayer(x_train.get(i).getX());
-                feedForward(i);
+                feedForward();
                 outputError(i);
 
                 for (int j = layers.size() - 2; j >= 0; j--) {
@@ -246,21 +264,20 @@ public class DNN {
                 for (int j = layers.size() - 2; j >= 0; j--) {
                     Layer a = layers.get(j);
                     Layer b = layers.get(j + 1);
-                    a.newW(tx, b.getError());
+                    a.newW(l_rate, b.getError());
                 }
 
                 erroMedio += erroGeral;
             }
             it++;
             erroMedio /= x_test.size();
-            double l = 1 - erroMedio;
-            tx = l_rate * erroMedio;
+
             System.out.println("Erro Médio:" + erroMedio);
-            System.out.println("TX:" + tx);
             teste();
             System.out.println("-------------------------------------------");
 
         }
+        treinando = false;
     }
 
     public void teste() {
@@ -275,7 +292,7 @@ public class DNN {
         for (int i = 0; i < x_test.size(); i++) {
             Layer input = layers.get(0);
             input.inputInputLayer(x_test.get(i).getX());
-            feedForward(i);
+            feedForward();
 
             int index = 0;
             double max = output.getAct_values().get(index);
@@ -300,7 +317,7 @@ public class DNN {
         System.out.println("Acertos:" + acertos + "/" + x_test.size());
     }
 
-    private void feedForward(int i) {
+    private void feedForward() {
         layers.get(1).feed(layers.get(0));
         for (int j = 1; j < layers.size() - 1; j++) {
             Layer a = layers.get(j);
@@ -322,7 +339,11 @@ public class DNN {
             if (i == index) {
                 y_true = 1;
             } else {
-                y_true = 0;
+                if (mode == 2) {
+                    y_true = -1;
+                } else {
+                    y_true = 0;
+                }
             }
 
             double y = output.getAct_values().get(i);
@@ -343,5 +364,6 @@ public class DNN {
             a.getError().set(i, error);
         }
     }
+
 
 }

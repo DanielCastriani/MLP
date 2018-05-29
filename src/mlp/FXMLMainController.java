@@ -2,7 +2,9 @@ package mlp;
 
 import java.net.URL;
 import java.util.ResourceBundle;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -90,10 +92,59 @@ public class FXMLMainController implements Initializable {
 
         dnn = new DNN();
 
-        tfErro.setText("0.01");
-        tfIteracao.setText("10");
-        tfN.setText("0.01");
-        tfQtdOculta.setText("2");
+        tfErro.setText("0.00001");
+        tfIteracao.setText("1000");
+        tfN.setText("0.02");
+        tfQtdOculta.setText("1");
+
+        updateDados();
+    }
+
+    private void updateDados() {
+        Task<Object> task = new Task<Object>() {
+            @Override
+            protected Integer call() throws Exception {
+                while (true) {
+                    try {
+                        if (dnn != null) {
+
+                            Platform.runLater(() -> {
+                                try{
+                                
+                                String st = "Acertos:" + ((float)dnn.getAcertos() / dnn.getX_test().size()*100) + " %";
+                                lbStatus.setText(st);
+                                
+                                String s ="\t\t";
+                                
+                                for (int i = 0; i < dnn.getClasses().size(); i++) {
+                                    s += dnn.getClasses().get(i) + "\t\t";
+                                }
+                                s += "\n";
+
+                                for (int i = 0; i < dnn.getClasses().size(); i++) {
+                                    s += dnn.getClasses().get(i) + "\t\t";
+                                    for (int j = 0; j < dnn.getClasses().size(); j++) {
+                                        s += dnn.getMc()[i][j] + "\t\t";
+                                    }
+                                    s += "\n";
+                                }
+                                taMat.setText(s);
+                                }catch(Exception ex){
+                                    
+                                }
+
+                            });
+                            Thread.sleep(150);
+                        }
+                    } catch (Exception ex) {
+
+                    }
+                }
+            }
+        };
+        Thread th = new Thread(task);
+        th.setDaemon(true);
+        th.start();
     }
 
     private void disableBtns(boolean b) {
@@ -107,10 +158,10 @@ public class FXMLMainController implements Initializable {
         if (dnn.init(qtd_hidden)) {
             disableBtns(false);
             updateTabela();
-            tfEntrada.setText(dnn.getQ_features()+ "");
-            tfSaida.setText(dnn.getQ_output()+ "");
+            tfEntrada.setText(dnn.getQ_features() + "");
+            tfSaida.setText(dnn.getQ_output() + "");
             tfOculta.setText(dnn.getQ_hidden_neurons() + "");
-            
+
         } else {
             disableBtns(true);
         }
@@ -160,33 +211,29 @@ public class FXMLMainController implements Initializable {
     @FXML
     private void OnAction_Treino(ActionEvent event) {
         if (init_parametros()) {
-            disableBtns(true);
-            dnn.train();
-            lbStatus.setText("Acerto:" + ((double)dnn.getAcertos() / dnn.getX_test().size() * 100.0 ) + "%");
-            disableBtns(false);
-            updateTabela();
-            
-            String s = "\t\t";
-            
-            for (int i = 0; i < dnn.getClasses().size(); i++) {
-                s += dnn.getClasses().get(i) + "\t\t";                
-            }
-            
-            s+= "\n";
-            
-            for (int i = 0; i < dnn.getClasses().size(); i++) {
-                s+=dnn.getClasses().get(i) + "\t\t";
-                for (int j = 0; j < dnn.getClasses().size(); j++) {
-                    s+=dnn.getMc()[i][j] + "\t\t";
+            Task<Object> task = new Task<Object>() {
+                @Override
+                protected Object call() throws Exception {
+                    btAbrirDataset.setDisable(true);
+                    disableBtns(true);
+
+                    dnn.train();
+
+                    disableBtns(false);
+                    btAbrirDataset.setDisable(false);
+                    lbStatus.setText("Acerto:" + ((double) dnn.getAcertos() / dnn.getX_test().size() * 100.0) + "%");
+
+                    return null;
                 }
-                s += "\n";
-            }
-            
-            taMat.setText(s);
-            
+            };
+
+            Thread th = new Thread(task);
+            th.setDaemon(true);
+            th.start();
+
         }
     }
-    
+
     @FXML
     private void OnAction_Teste(ActionEvent event) {
         dnn.teste();

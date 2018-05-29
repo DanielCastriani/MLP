@@ -34,7 +34,7 @@ public class Layer {
     public Layer(int q_input, int q_w) {
 
         Random rd = new Random();
-        rd.setSeed(10101010);
+        //rd.setSeed(10101010);
 
         values = new ArrayList<>();
         act_values = new ArrayList<>();
@@ -70,6 +70,7 @@ public class Layer {
     }
 
     public void feed(Layer in) {
+        
         for (int i = 0; i < getValues().size(); i++) {
             double sum = 0;
             for (int j = 0; j < in.getValues().size(); j++) {
@@ -146,10 +147,7 @@ public class Layer {
     }
 
     public double tanh(double x) {
-        double e = Math.pow(Math.E, -2 * x);
-        double a = 1 - e;
-        double b = 1 + e;
-        return a / b;
+        return Math.tanh(x);
     }
 
     public double d_tanh(double x) {
