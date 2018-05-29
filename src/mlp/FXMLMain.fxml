@@ -6,6 +6,7 @@
 <?import javafx.scene.control.RadioButton?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
@@ -61,7 +62,10 @@
                         <Insets left="10.0" />
                      </GridPane.margin>
                   </TextField>
-                  <Label text="Camadas" GridPane.columnIndex="2" GridPane.rowIndex="2" />
+                  <Label text="Camadas" GridPane.columnIndex="2" GridPane.rowIndex="2">
+                     <GridPane.margin>
+                        <Insets left="10.0" />
+                     </GridPane.margin></Label>
                </children>
                <GridPane.margin>
                   <Insets top="10.0" />
@@ -159,15 +163,27 @@
             <Font name="System Bold" size="15.0" />
          </font>
       </Label>
-      <TableView fx:id="tvTest" prefHeight="200.0" prefWidth="200.0">
-         <columns>
-            <TableColumn fx:id="tvTestFeatures" prefWidth="746.0" text="FEATURES" />
-            <TableColumn fx:id="tvTestY" prefWidth="190.0" text="Y" />
-            <TableColumn fx:id="tvTestYTRUE" prefWidth="250.0" text="Y TRUE" />
-         </columns>
+      <GridPane>
          <VBox.margin>
             <Insets bottom="20.0" left="20.0" right="20.0" />
          </VBox.margin>
-      </TableView>
+         <columnConstraints>
+            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" percentWidth="80.0" />
+            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" percentWidth="20.0" prefWidth="100.0" />
+         </columnConstraints>
+         <rowConstraints>
+            <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+         </rowConstraints>
+         <children>
+            <TableView fx:id="tvTest" prefHeight="200.0" prefWidth="200.0">
+               <columns>
+                  <TableColumn fx:id="tvTestFeatures" prefWidth="543.0" text="FEATURES" />
+                  <TableColumn fx:id="tvTestY" prefWidth="192.0" text="Y" />
+                  <TableColumn fx:id="tvTestYTRUE" prefWidth="182.0" text="Y TRUE" />
+               </columns>
+            </TableView>
+            <TextArea fx:id="taMat" prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="1" />
+         </children>
+      </GridPane>
    </children>
 </VBox>

@@ -31,7 +31,7 @@ public class Layer {
         return error;
     }
 
-    public Layer(int q_input, int q_output) {
+    public Layer(int q_input, int q_w) {
 
         Random rd = new Random();
         rd.setSeed(10101010);
@@ -47,9 +47,9 @@ public class Layer {
             error.add(new Double(0));
         }
 
-        for (int i = 0; i < values.size(); i++) {
+        for (int i = 0; i < q_input; i++) {
             ArrayList _w = new ArrayList();
-            for (int j = 0; j < q_output; j++) {
+            for (int j = 0; j < q_w; j++) {
                 double val;
                 if (rd.nextDouble() <= 0.5) {
                     val = rd.nextDouble() * -1;
@@ -61,7 +61,7 @@ public class Layer {
             w.add(_w);
         }
     }
-
+    
     public void inputInputLayer(ArrayList<Double> in) {
         for (int i = 0; i < in.size(); i++) {
             values.set(i, in.get(i));

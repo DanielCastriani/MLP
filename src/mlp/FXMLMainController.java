@@ -2,9 +2,7 @@ package mlp;
 
 import java.net.URL;
 import java.util.ResourceBundle;
-import javafx.application.Platform;
 import javafx.collections.FXCollections;
-import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -13,6 +11,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -67,6 +66,8 @@ public class FXMLMainController implements Initializable {
     private Button btTeste;
     @FXML
     private TextField tfQtdOculta;
+    @FXML
+    private TextArea taMat;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -95,7 +96,6 @@ public class FXMLMainController implements Initializable {
         tfQtdOculta.setText("2");
     }
 
-   
     private void disableBtns(boolean b) {
         btTeste.setDisable(b);
         btTreino.setDisable(b);
@@ -107,7 +107,10 @@ public class FXMLMainController implements Initializable {
         if (dnn.init(qtd_hidden)) {
             disableBtns(false);
             updateTabela();
+            tfEntrada.setText(dnn.getQ_features()+ "");
+            tfSaida.setText(dnn.getQ_output()+ "");
             tfOculta.setText(dnn.getQ_hidden_neurons() + "");
+            
         } else {
             disableBtns(true);
         }
@@ -159,12 +162,31 @@ public class FXMLMainController implements Initializable {
         if (init_parametros()) {
             disableBtns(true);
             dnn.train();
-            updateTabela();
-            lbStatus.setText(dnn.getAcertos() + "");
+            lbStatus.setText("Acerto:" + ((double)dnn.getAcertos() / dnn.getX_test().size() * 100.0 ) + "%");
             disableBtns(false);
+            updateTabela();
+            
+            String s = "\t\t";
+            
+            for (int i = 0; i < dnn.getClasses().size(); i++) {
+                s += dnn.getClasses().get(i) + "\t\t";                
+            }
+            
+            s+= "\n";
+            
+            for (int i = 0; i < dnn.getClasses().size(); i++) {
+                s+=dnn.getClasses().get(i) + "\t\t";
+                for (int j = 0; j < dnn.getClasses().size(); j++) {
+                    s+=dnn.getMc()[i][j] + "\t\t";
+                }
+                s += "\n";
+            }
+            
+            taMat.setText(s);
+            
         }
     }
-
+    
     @FXML
     private void OnAction_Teste(ActionEvent event) {
         dnn.teste();
