@@ -17,68 +17,66 @@ public class DNN {
     private ArrayList<Double> classes;
     private ArrayList<Reg> x_train;
     private ArrayList<Reg> x_test;
-
+    
     private int q_features;
     private int q_output;
     private int q_hidden_neurons;
     private int q_hidden_layers;
     private int mode;
-
-    private Layer input;
-    private ArrayList<Layer> hidden;
-    private Layer output;
-
+    
+    private ArrayList<Layer> layers;
+    
     private int it;
     private double error;
     private double l_rate;
-
+    
     private double erroGeral;
-
+    
     private int[][] mc;
     
     private int acertos;
-
+    
     public DNN() {
-
+        
     }
     //<editor-fold defaultstate="collapsed" desc="Getters & Setters">
 
     public int getQ_hidden_neurons() {
         return q_hidden_neurons;
     }
-
+    
     public ArrayList<Reg> getX_train() {
         return x_train;
     }
-
+    
     public ArrayList<Reg> getX_test() {
         return x_test;
     }
-
+    
     public void setMode(int mode) {
         this.mode = mode;
     }
-
+    
     public void setIt(int it) {
         this.it = it;
     }
-
+    
     public void setError(double error) {
         this.error = error;
     }
-
+    
     public void setL_rate(double l_rate) {
         this.l_rate = l_rate;
     }
-
+    
     public void setQ_hidden_neurons(int q_hidden_neurons) {
         this.q_hidden_neurons = q_hidden_neurons;
     }
-
+    
     public void setQ_hidden_layers(int q_hidden_layers) {
         this.q_hidden_layers = q_hidden_layers;
     }
-
+    
     public int getAcertos() {
         return acertos;
     }
@@ -87,14 +85,14 @@ public class DNN {
     //<editor-fold defaultstate="collapsed" desc="INIT">
     public void normalize(ArrayList<Reg> x) {
         Reg r = x.get(0);
-
+        
         Reg max = new Reg();
         max.setX(new ArrayList());
-
+        
         for (int i = 0; i < r.getX().size(); i++) {
             max.getX().add(r.getX().get(i));
         }
-
+        
         for (Reg l : x) {
             for (int i = 0; i < l.getX().size(); i++) {
                 if ((double) l.getX().get(i) > (double) max.getX().get(i)) {
@@ -102,35 +100,31 @@ public class DNN {
                 }
             }
         }
-
+        
         for (Reg l : x) {
             for (int i = 0; i < l.getX().size(); i++) {
                 double norma = (double) l.getX().get(i) / (double) max.getX().get(i);
-
+                
                 l.getX().set(i, norma);
             }
         }
     }
-
+    
     public void init_layers() {
-        input = new Layer(q_features, q_hidden_neurons);
+        layers = new ArrayList<>();
+        Layer input = new Layer(q_features, q_hidden_neurons);
         input.setMode(mode);
-        hidden = new ArrayList<>();
+        layers.add(input);
         for (int i = 0; i < q_hidden_layers; i++) {
-            int qtdin = 0;
-            if (hidden.size() == 0) {
-                qtdin = q_hidden_neurons;
-            } else {
-                qtdin = hidden.get(hidden.size() - 1).getValues().size();
-            }
-            Layer h = new Layer(qtdin, q_hidden_neurons);
+            Layer h = new Layer(q_hidden_neurons, q_hidden_neurons);
             h.setMode(mode);
-            hidden.add(h);
+            layers.add(h);
         }
-        output = new Layer(hidden.get(hidden.size() - 1).getValues().size(), q_output);
+        Layer output = new Layer(layers.get(layers.size() - 1).getValues().size(), q_output);
         output.setMode(mode);
+        layers.add(output);
     }
-
+    
     public boolean init(int hidden_layers) {
         x_train = load(true);
         if (x_train != null) {
@@ -141,13 +135,13 @@ public class DNN {
                 this.q_hidden_layers = hidden_layers;
                 normalize(x_train);
                 normalize(x_test);
-
+                
                 return true;
             }
         }
         return false;
     }
-
+    
     private ArrayList<Reg> load(boolean train) {
         FileChooser fc = new FileChooser();
         if (train) {
@@ -159,22 +153,22 @@ public class DNN {
         fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("All", "*"));
         fc.setInitialDirectory(new File("."));
         File f = fc.showOpenDialog(null);
-
+        
         try {
             if (f != null) {
-
+                
                 ArrayList<Reg> x = new ArrayList<Reg>();
                 if (train) {
                     classes = new ArrayList<>();
                 }
-
+                
                 BufferedReader br = new BufferedReader(new FileReader(f.getAbsoluteFile()));
                 String line = br.readLine();
                 String[] info = line.split(",");
-
+                
                 while ((line = br.readLine()) != null) {
                     info = line.split(",");
-
+                    
                     ArrayList<Double> list_atrib = new ArrayList<>();
                     for (int i = 0; i < info.length - 1; i++) {
                         String s = info[i];
@@ -183,7 +177,7 @@ public class DNN {
                     Double y_true = Double.parseDouble(info[info.length - 1]);
                     Reg r = new Reg(list_atrib, -1.0, y_true);
                     x.add(r);
-
+                    
                     if (train) {
                         if (!classes.contains(y_true)) {
                             classes.add(y_true);
@@ -202,7 +196,7 @@ public class DNN {
         } catch (IOException ex) {
             Logger.getLogger(DNN.class.getName()).log(Level.SEVERE, null, ex);
         }
-
+        
         return null;
     }
     //</editor-fold>
@@ -213,82 +207,83 @@ public class DNN {
             System.out.println("Epoch:" + (it + 1));
             double erroMedio = 0;
             for (int i = 0; i < x_train.size(); i++) {
+                Layer input = layers.get(0);
                 input.inputInputLayer(x_train.get(i).getX());
                 feedForward(i);
                 outputError(i);
-                layerError(hidden.get(hidden.size() - 1), output);
-                for (int j = hidden.size() - 2; j >= 0; j--) {
-                    layerError(hidden.get(j), hidden.get(j + 1));
+                
+                for (int j = layers.size() - 2; j >= 0; j--) {
+                    layerError(layers.get(j), layers.get(j + 1));
                 }
-
-                output.newW(l_rate, hidden.get(hidden.size() - 1).getError());
-
-                for (int j = hidden.size() - 2; j >= 0; j--) {
-                    Layer a = hidden.get(j);
-                    a.newW(l_rate, hidden.get(j + 1).getError());
+                
+                for (int j = layers.size() - 2; j >= 0; j--) {
+                    Layer a = layers.get(j);
+                    Layer b = layers.get(j + 1);
+                    a.newW(l_rate, b.getError());
                 }
-
-                input.newW(l_rate, hidden.get(0).getError());
-
+                
                 erroMedio += erroGeral;
             }
             teste();
             it++;
         }
     }
-
+    
     public void teste() {
+        Layer output = layers.get(layers.size() - 1);
         mc = new int[x_test.size()][x_test.size()];
-
+        
         for (int i = 0; i < x_test.size(); i++) {
+            Layer input = layers.get(0);
             input.inputInputLayer(x_test.get(i).getX());
             feedForward(i);
-
+            
             int index = 0;
             double max = output.getAct_values().get(index);
-
+            
             for (int j = 1; j < output.getAct_values().size(); j++) {
                 if (output.getAct_values().get(j) > max) {
                     max = output.getAct_values().get(j);
                     index = j;
                 }
             }
-
+            
             x_test.get(index).setY(classes.get(index));
             mc[index][classes.indexOf(x_test.get(i).getY_true())] = index;
         }
         int acerto = 0;
-
+        
         for (int i = 0; i < x_test.size(); i++) {
             acerto += mc[i][i];
         }
         acertos = x_test.size() * acerto / 100;
     }
-
+    
     private void feedForward(int i) {
-        hidden.get(0).feed(input);
-        for (int j = 0; j < hidden.size() - 1; j++) {
-            Layer a = hidden.get(j);
-            Layer b = hidden.get(j + 1);
+        layers.get(1).feed(layers.get(0));
+        for (int j = 1; j < layers.size() - 1; j++) {
+            Layer a = layers.get(j);
+            Layer b = layers.get(j + 1);
             b.feed(a);
         }
-        output.feed(hidden.get(hidden.size() - 1));
     }
-
+    
     private void outputError(int p) {
+        Layer output = layers.get(layers.size() - 1);
+        
         erroGeral = 0;
         double erro = 0;
-
+        
         double y_true;
         int index = classes.indexOf(x_train.get(p).getY_true());
-
+        
         for (int i = 0; i < output.getAct_values().size(); i++) {
             if (i == index) {
                 y_true = 1;
             } else {
                 y_true = 0;
             }
-
+            
             double y = output.getAct_values().get(i);
             erro = (y_true - y) * output.d_f(output.getValues().get(i));
             output.getError().set(i, erro);
@@ -296,7 +291,7 @@ public class DNN {
         }
         erroGeral *= 0.5;
     }
-
+    
     private void layerError(Layer a, Layer b) {
         double error;
         for (int i = 0; i < a.getValues().size(); i++) {
@@ -307,5 +302,5 @@ public class DNN {
             a.getError().set(i, error);
         }
     }
-
+    
 }
