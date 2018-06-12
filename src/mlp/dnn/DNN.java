@@ -339,7 +339,7 @@ public class DNN {
             if (i == index) {
                 y_true = 1;
             } else {
-                if (mode == 2) {
+                if (mode == 3) {
                     y_true = -1;
                 } else {
                     y_true = 0;
